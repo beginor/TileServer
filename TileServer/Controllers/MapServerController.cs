@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using System.Web.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -50,16 +51,18 @@ namespace TileServer.Controllers {
                 var json = JsonConvert.DeserializeObject<JObject>(text);
                 json["mapName"] = mapName;
                 text = json.ToString();
-                if (Request.GetQueryNameValuePairs().Any(q => q.Key.Equals("callback", StringComparison.OrdinalIgnoreCase))) {
-                    var callback = Request.GetQueryNameValuePairs().First(
+                var callback = Request.GetQueryNameValuePairs().FirstOrDefault(
                         q => q.Key.Equals("callback", StringComparison.OrdinalIgnoreCase)
                     );
+                var hasCallback = !string.IsNullOrEmpty(callback.Value);
+                if (hasCallback) {
                     text = $"{callback.Value}({text})";
                 }
                 var response = Request.CreateResponse(HttpStatusCode.OK);
                 var content = new StringContent(text);
-                //content.Headers.ContentEncoding.Add("utf-8");
-                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                content.Headers.ContentType = hasCallback
+                    ? new MediaTypeHeaderValue("text/javascript")
+                    : new MediaTypeHeaderValue("application/json");
                 response.Content = content;
                 return ResponseMessage(response);
             }
@@ -70,10 +73,31 @@ namespace TileServer.Controllers {
 
         // GET: arcgis/rest/services/BaseMap/ADMap/MapServer/tile/1/0/1
         [HttpGet, Route("{mapName}/MapServer/tile/{level:int}/{row:int}/{col:int}")]
-        public IHttpActionResult GetTile(string mapName, int level, int row, int col) {
+        public async Task<IHttpActionResult> GetTile(
+            string mapName,
+            int level,
+            int row,
+            int col
+        ) {
             try {
-                var tilePath = Path.Combine(cacheFolder, "BaseMap_" + mapName, "Layers", "_alllayers");
-                var buff = GetTileContent(tilePath, level, row, col);
+                var tilePath = Path.Combine(
+                    cacheFolder,
+                    mapName,
+                    "Layers",
+                    "_alllayers"
+                );
+                if (!Directory.Exists(tilePath)) {
+                    tilePath = Path.Combine(
+                        cacheFolder,
+                        "BaseMap_" + mapName,
+                        "Layers",
+                        "_alllayers"
+                    );
+                }
+                if (!Directory.Exists(tilePath)) {
+                    return NotFound();
+                }
+                var buff = await GetTileContent(tilePath, level, row, col);
                 if (buff.Length == 0) {
                     return NotFound();
                 }
@@ -88,7 +112,12 @@ namespace TileServer.Controllers {
             }
         }
 
-        private static byte[] GetTileContent(string tilePath, int lev, int r, int c) {
+        private static async Task<byte[]> GetTileContent(
+            string tilePath,
+            int lev,
+            int r,
+            int c
+        ) {
             int rowGroup = 128 * (r / 128);
             int colGroup = 128 * (c / 128);
             // try get from bundle
@@ -100,26 +129,27 @@ namespace TileServer.Controllers {
             );
             int index = 128 * (r - rowGroup) + (c - colGroup);
             if (File.Exists(bundleFileName)) {
-                using (FileStream fs = new FileStream(bundleFileName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                using (var fs = new FileStream(bundleFileName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     fs.Seek(64 + 8 * index, SeekOrigin.Begin);
                     // 获取位置索引并计算切片位置偏移量
                     byte[] indexBytes = new byte[4];
-                    fs.Read(indexBytes, 0, 4);
-                    long offset = (indexBytes[0] & 0xff) + (long)(indexBytes[1] & 0xff) * 256 + (long)(indexBytes[2] & 0xff) * 65536
-                                    + (long)(indexBytes[3] & 0xff) * 16777216;
+                    await fs.ReadAsync(indexBytes, 0, 4);
+                    long offset = (indexBytes[0] & 0xff)
+                        + (long)(indexBytes[1] & 0xff) * 256
+                        + (long)(indexBytes[2] & 0xff) * 65536
+                        + (long)(indexBytes[3] & 0xff) * 16777216;
                     // 获取切片长度索引并计算切片长度
                     long startOffset = offset - 4;
                     fs.Seek(startOffset, SeekOrigin.Begin);
                     byte[] lengthBytes = new byte[4];
-                    fs.Read(lengthBytes, 0, 4);
-                    int length = (lengthBytes[0] & 0xff) + (lengthBytes[1] & 0xff) * 256 + (lengthBytes[2] & 0xff) * 65536
-                                + (lengthBytes[3] & 0xff) * 16777216;
+                    await fs.ReadAsync(lengthBytes, 0, 4);
+                    int length = (lengthBytes[0] & 0xff)
+                        + (lengthBytes[1] & 0xff) * 256
+                        + (lengthBytes[2] & 0xff) * 65536
+                        + (lengthBytes[3] & 0xff) * 16777216;
                     //根据切片位置和切片长度获取切片
-                    byte[] tileBytes = new byte[length];
-                    int bytesRead = 0;
-                    if (length > 0) {
-                        bytesRead = fs.Read(tileBytes, 0, tileBytes.Length);
-                    }
+                    var tileBytes = new byte[length];
+                    await fs.ReadAsync(tileBytes, 0, tileBytes.Length);
                     fs.Close();
                     return tileBytes;
                 }
@@ -141,15 +171,16 @@ namespace TileServer.Controllers {
             else {
                 return new byte[0];
             }
-            using (FileStream fs = new FileStream(tile, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+            using (var fs = new FileStream(tile, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                 //获取位置索引并计算切片位置偏移量
                 int length = (int)fs.Length;
                 byte[] fileBytes = new byte[length];
-                fs.Read(fileBytes, 0, length);
+                await fs.ReadAsync(fileBytes, 0, length);
                 fs.Close();
                 return fileBytes;
             }
         }
 
     }
+
 }
