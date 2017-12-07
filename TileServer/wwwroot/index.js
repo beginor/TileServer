@@ -1,29 +1,50 @@
 ﻿require([
     'dojo/request',
-    'esri/config',
     'esri/Map',
-    'esri/views/MapView',
+    'esri/views/SceneView',
+    'esri/widgets/BasemapGallery',
+    'esri/Basemap',
     'esri/layers/TileLayer',
     'dojo/domReady!'
-], function(request, config, Map, MapView, TileLayer) {
-    // config.request.corsEnabledServers.push({
-    //     host: 'localhost:8088',
-    //     withCredentials: true
-    // });
-    var baseUrl = '/arcgis/rest/services/BaseMap/';
-    var layer = new TileLayer({
-        url: '/arcgis/rest/services/BaseMap/AreaMap/MapServer'
+], function (
+    request, Map, SceneView, BasemapGallery, Basemap, TileLayer
+) {
+        var map = new Map({
+            basemap: 'gray'
+        });
+
+        var view = new SceneView({
+            container: 'viewDiv',
+            map: map,
+            center: [113.2, 23.4],
+            zoom: 6
+        });
+
+        var baseMap = '/arcgis/rest/services/BaseMap';
+
+        request.get(baseMap, { handleAs: 'json' })
+        .then(function (data) {
+            var basemaps = data.map(function (item) {
+                return new Basemap({
+                    id: item,
+                    title: item,
+                    thumbnailUrl: baseMap + '/' + item + '/MapServer/tile/7/55/104',
+                    baseLayers: [
+                        new TileLayer({
+                            url: baseMap + '/' + item + '/MapServer'
+                        })
+                    ]
+                })
+            });
+            var basemapGallery = new BasemapGallery({
+                view: view,
+                source: basemaps
+            });
+
+            // Add the widget to the top-right corner of the view
+            view.ui.add(basemapGallery, {
+                position: 'top-right'
+            });
+        });
+
     });
-    // Add layer to map
-    var map = new Map({
-        // basemap: 'streets',
-        ground: 'world-elevation'
-    });
-    var view = new MapView({
-        container: 'map',  // Reference to the DOM node that will contain the view
-        map: map,  // References the map object created in step 3
-        center: [113.2, 23.4],
-        zoom: 7
-    });
-    map.layers.add(layer);
-});
