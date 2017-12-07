@@ -43,6 +43,21 @@ namespace TileServer.Controllers {
             }
         }
 
+        [HttpGet, Route("")]
+        public IHttpActionResult GetAll() {
+            try {
+                var folderInfo = new DirectoryInfo(cacheFolder);
+                var subDirs = folderInfo.EnumerateDirectories()
+                    .Where(dir => !dir.Name.StartsWith("."))
+                    .Select(dir => dir.Name)
+                    .ToList();
+                return Ok(subDirs);
+            }
+            catch (Exception ex) {
+                return InternalServerError(ex);
+            }
+        }
+
         // GET: arcgis/rest/services/{tileName}/MapServer?f=pjson
         [HttpGet, Route("{mapName}/MapServer")]
         public IHttpActionResult GetTileMapLayerInfo(string mapName) {
