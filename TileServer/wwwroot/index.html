@@ -1,15 +1,21 @@
 ﻿<!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <title>OAuth Demo</title>
-    </head>
-    <body>
-        <h1>OAuth Demo</h1>
-        <form method="post" action="/rest/account/external-login">
-            <div id="oauth"></div>
-        </form>
-        <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-        <script src="index.js"></script>
-    </body>
+<head>
+    <meta charset="utf-8" />
+    <title>Basemap Demo</title>
+    <link rel="stylesheet" href="http://112.74.67.213/arcgis-js-api/library/4.5/esri/css/main.css">
+    <script src="http://112.74.67.213/arcgis-js-api/library/4.5/init.js"></script>
+    <style>
+    html, body, #map {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+    }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="index.js"></script>
+</body>
 </html>
