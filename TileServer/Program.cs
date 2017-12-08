@@ -12,7 +12,7 @@ namespace OAuthTest {
 
         public static void Main(string[] args) {
             // Define listening ip and port;
-            var ip = IPAddress.Loopback;
+            var ip = IPAddress.Any;
             const int port = 8088;
             // start the server;
             using (var server = BuildNowinServer(ip, port)) {
