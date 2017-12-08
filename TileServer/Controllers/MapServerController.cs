@@ -65,6 +65,8 @@ namespace TileServer.Controllers {
                 var text = File.ReadAllText(mapInfoFile);
                 var json = JsonConvert.DeserializeObject<JObject>(text);
                 json["mapName"] = mapName;
+                var firstLayer = json.SelectToken("layers[0]") as JObject;
+                firstLayer["name"] = mapName;
                 text = json.ToString();
                 var callback = Request.GetQueryNameValuePairs().FirstOrDefault(
                         q => q.Key.Equals("callback", StringComparison.OrdinalIgnoreCase)
