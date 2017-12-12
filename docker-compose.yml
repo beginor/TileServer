@@ -1,0 +1,14 @@
+﻿version: "2"
+services:
+  jexus:
+    image: docker7.gdepb.gov.cn:5000/beginor/jexus:5.8.2.21
+    container_name: tile-server-jexus
+    hostname: tile-server.gdepb.gov.cn
+    ports:
+      - 2019:80
+    volumes:
+      - ./jexus/conf/default:/usr/jexus/siteconf/default
+      - ./jexus/web:/var/www/default
+      - ./jexus/log:/usr/jexus/log
+      - /Volumes/share/directories/arcgiscache:/arcgiscache
+    restart: unless-stopped
