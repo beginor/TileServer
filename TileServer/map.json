@@ -1,14 +1,14 @@
 ﻿{
   "currentVersion": 10.31,
   "serviceDescription": "",
-  "mapName": "Layers",
+  "mapName": "",
   "description": "",
   "copyrightText": "",
-  "supportsDynamicLayers": true,
+  "supportsDynamicLayers": false,
   "layers": [
     {
       "id": 0,
-      "name": "地市",
+      "name": "",
       "parentLayerId": -1,
       "defaultVisibility": true,
       "subLayerIds": null,
