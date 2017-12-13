@@ -1,0 +1,17 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "TileServer",
+      "type": "mono",
+      "request": "launch",
+      "program": "${workspaceRoot}/TileServer/bin/TileServer.exe",
+      "cwd": "${workspaceRoot}/TileServer/bin",
+      "console": "integratedTerminal",
+      "preLaunchTask": "build"
+    }
+  ]
+}
