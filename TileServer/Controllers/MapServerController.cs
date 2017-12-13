@@ -132,21 +132,23 @@ namespace TileServer.Controllers {
 
         private static async Task<byte[]> GetTileContent(
             string tilePath,
-            int lev,
-            int r,
-            int c
+            int level,
+            int row,
+            int col
         ) {
-            int rowGroup = 128 * (r / 128);
-            int colGroup = 128 * (c / 128);
+            int rowGroup = 128 * (row / 128);
+            int colGroup = 128 * (col / 128);
             // try get from bundle
             // string.Format("{0}\\L{1:D2}\\R{2:X4}C{3:X4}.{4}", tilePath, lev, rowGroup, colGroup, "bundle");
-            var bundleFileName = Path.Combine(
+            var bundleFileName = GetBundlePath(
                 tilePath,
-                $"L{lev:D2}",
-                $"R{rowGroup:X4}C{colGroup:X4}.bundle"
+                level,
+                rowGroup,
+                colGroup
             );
-            int index = 128 * (r - rowGroup) + (c - colGroup);
-            if (File.Exists(bundleFileName)) {
+            int index = 128 * (row - rowGroup) + (col - colGroup);
+            if ((!string.IsNullOrEmpty(bundleFileName))
+                && File.Exists(bundleFileName) ) {
                 using (var fs = new FileStream(bundleFileName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     fs.Seek(64 + 8 * index, SeekOrigin.Begin);
                     // 获取位置索引并计算切片位置偏移量
@@ -176,9 +178,9 @@ namespace TileServer.Controllers {
             // var tileFileName = string.Format("{0}\\L{1:D2}\\R{2:X8}\\C{3:X8}", tilePath, lev, r, c);
             var tile = Path.Combine(
                 tilePath,
-                lev.ToString("D2"),
-                r.ToString("X8"),
-                c.ToString("X8")
+                level.ToString("D2"),
+                row.ToString("X8"),
+                col.ToString("X8")
             );
             if (File.Exists(tile + ".png")) {
                 tile = tile + ".png";
@@ -197,6 +199,31 @@ namespace TileServer.Controllers {
                 fs.Close();
                 return fileBytes;
             }
+        }
+
+        private static string GetBundlePath(
+            string tileFolder,
+            int level,
+            int rowGroup,
+            int colGroup
+        ) {
+            var bundlePath = Path.Combine(
+                tileFolder,
+                $"L{level:D2}",
+                $"R{rowGroup:X4}C{colGroup:X4}.bundle"
+            );
+            if (File.Exists(bundlePath)) {
+                return bundlePath;
+            }
+            bundlePath = Path.Combine(
+                tileFolder,
+                $"L{level:D2}",
+                $"R{rowGroup:x4}C{colGroup:x4}.bundle"
+            );
+            if (File.Exists(bundlePath)) {
+                return bundlePath;
+            }
+            return string.Empty;
         }
 
     }
